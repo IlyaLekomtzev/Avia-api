@@ -66,8 +66,19 @@ const showCity = (input, list, clear) => {
     }
 }
 
-const getDate = () => {
-    
+const getNameCity = (code) => {
+    const objectCity = city.find((item) => item.code === code);
+    return objectCity.name;
+}
+
+const getDate = (date) => {
+    return new Date(date).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 }
 
 const getChanges = (num) => {
@@ -79,7 +90,7 @@ const getChanges = (num) => {
 }
 
 const createCard = (data) => {
-    article = document.createElement('article');
+    let article = document.createElement('article');
     article.classList.add('ticket');
 
     let htmlArticle = '';
@@ -95,15 +106,15 @@ const createCard = (data) => {
             <div class="right-side">
                 <div class="block-left">
                     <div class="city__from">Вылет из города
-                        <span class="city__name">${data.origin}</span>
+                        <span class="city__name">${getNameCity(data.origin)}</span>
                     </div>
-                    <div class="date">${data.depart_date}</div>
+                    <div class="date">${getDate(data.depart_date)}</div>
                 </div>
         
                 <div class="block-right">
                     <div class="changes">${getChanges(data.number_of_changes)}</div>
                     <div class="city__to">Город назначения:
-                        <span class="city__name">${data.destination}</span>
+                        <span class="city__name">${getNameCity(data.destination)}</span>
                     </div>
                 </div>
             </div>
@@ -120,24 +131,68 @@ const createCard = (data) => {
 
 const renderCheapDay = (ticket) => {
     const ticketElement = createCard(ticket[0]);
-    cheapestTicket.append(ticketElement);
-    console.log(ticketElement);
-    
+    cheapestTicket.append(ticketElement);    
 };
 
 const renderCheapYear = (tickets) => {
-    tickets.sort((a, b) => {
-        if(a.value > b.value){
-            return 1;
-        }
-        if(a.value < b.value){
-            return -1;
-        }
-        return 0;
-    });
-
-    console.log(tickets);
+    if(tickets){
+        tickets.sort((a, b) => {
+            if(a.value > b.value){
+                return 1;
+            }
+            if(a.value < b.value){
+                return -1;
+            }
+            return 0;
+        });
     
+        let i = 0;
+    
+        tickets.forEach((item) => {
+            i++;
+    
+            if(i < 11){
+                let article = document.createElement('article');
+                article.classList.add('ticket');
+        
+                let htmlArticle = `
+                <h3 class="agent">${item.gate}</h3>
+                <div class="ticket__wrapper">
+                    <div class="left-side">
+                        <a href="https://www.aviasales.ru/search/SVX2905KGD1" class="button button__buy">Купить
+                            за ${item.value}₽</a>
+                    </div>
+                    <div class="right-side">
+                        <div class="block-left">
+                            <div class="city__from">Вылет из города
+                                <span class="city__name">${getNameCity(item.origin)}</span>
+                            </div>
+                            <div class="date">${getDate(item.depart_date)}</div>
+                        </div>
+                
+                        <div class="block-right">
+                            <div class="changes">${getChanges(item.number_of_changes)}</div>
+                            <div class="city__to">Город назначения:
+                                <span class="city__name">${getNameCity(item.destination)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+        
+                article.insertAdjacentHTML('afterbegin', htmlArticle);
+                otherCheapTickets.append(article);
+            }
+        });
+    } else {
+        let article = document.createElement('article');
+        article.classList.add('ticket');
+
+        let htmlArticle = '<h3>Нет билетов</h3>';
+
+        article.insertAdjacentHTML('afterbegin', htmlArticle);
+        otherCheapTickets.append(article);
+    }
 };
 
 //Рендер билетов
@@ -192,6 +247,10 @@ clearTo.addEventListener('click', () => {
 //Обработка отправки формы
 formSearch.addEventListener('submit', (event) => {
     event.preventDefault();
+
+    cheapestTicket.innerHTML = '';
+    otherCheapTickets.innerHTML = '';
+
     const formData = {
         from: city.find((item) => inputCitiesFrom.value === item.name),
         to: city.find((item) => inputCitiesTo.value === item.name),
