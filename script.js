@@ -7,7 +7,9 @@ const formSearch = document.querySelector('.form-search'),
       inputCitiesTo = formSearch.querySelector('.input__cities-to'),
       dropdownCitiesTo = formSearch.querySelector('.dropdown__cities-to'),
       inputDate = formSearch.querySelector('.input__date-depart'),
-      clearTo = formSearch.querySelector('.to__clear');
+      clearTo = formSearch.querySelector('.to__clear'),
+      cheapestTicket = document.getElementById('cheapest-ticket'),
+      otherCheapTickets = document.getElementById('other-cheap-tickets');
 
 //Массив городов
 let city = [];
@@ -52,7 +54,7 @@ const showCity = (input, list, clear) => {
                 return fixItem.includes(input.value.toLowerCase());
             }
         });
-    
+
         filterCity.forEach(item => {
             const li = document.createElement('li');
             li.classList.add('dropdown__city');
@@ -64,12 +66,78 @@ const showCity = (input, list, clear) => {
     }
 }
 
+const getDate = () => {
+    
+}
+
+const getChanges = (num) => {
+    if(num){
+        return num === 1 ? 'С одной пересадкой' : 'С двумя пересадками';
+    } else{
+        return 'Без пересадок';
+    }
+}
+
+const createCard = (data) => {
+    article = document.createElement('article');
+    article.classList.add('ticket');
+
+    let htmlArticle = '';
+
+    if(data){
+        htmlArticle = `
+        <h3 class="agent">${data.gate}</h3>
+        <div class="ticket__wrapper">
+            <div class="left-side">
+                <a href="https://www.aviasales.ru/search/SVX2905KGD1" class="button button__buy">Купить
+                    за ${data.value}₽</a>
+            </div>
+            <div class="right-side">
+                <div class="block-left">
+                    <div class="city__from">Вылет из города
+                        <span class="city__name">${data.origin}</span>
+                    </div>
+                    <div class="date">${data.depart_date}</div>
+                </div>
+        
+                <div class="block-right">
+                    <div class="changes">${getChanges(data.number_of_changes)}</div>
+                    <div class="city__to">Город назначения:
+                        <span class="city__name">${data.destination}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    } else{
+        htmlArticle = '<h3>Нет билетов</h3>';
+    }
+
+    article.insertAdjacentHTML('afterbegin', htmlArticle);
+
+    return article;
+}
+
 const renderCheapDay = (ticket) => {
-    console.log(ticket); 
+    const ticketElement = createCard(ticket[0]);
+    cheapestTicket.append(ticketElement);
+    console.log(ticketElement);
+    
 };
 
 const renderCheapYear = (tickets) => {
-    console.log(tickets); 
+    tickets.sort((a, b) => {
+        if(a.value > b.value){
+            return 1;
+        }
+        if(a.value < b.value){
+            return -1;
+        }
+        return 0;
+    });
+
+    console.log(tickets);
+    
 };
 
 //Рендер билетов
@@ -125,20 +193,33 @@ clearTo.addEventListener('click', () => {
 formSearch.addEventListener('submit', (event) => {
     event.preventDefault();
     const formData = {
-        from: city.find((item) => inputCitiesFrom.value === item.name).code,
-        to: city.find((item) => inputCitiesTo.value === item.name).code,
+        from: city.find((item) => inputCitiesFrom.value === item.name),
+        to: city.find((item) => inputCitiesTo.value === item.name),
         when: inputDate.value,
     };
 
-    const requestData = `?depart_date=${formData.when}&origin=${formData.from}&destination=${formData.to}&one_way=true&token=${API_KEY}`;
+    if(formData.from && formData.to){
+        const requestData = `?depart_date=${formData.when}&origin=${formData.from.code}&destination=${formData.to.code}&one_way=true&token=${API_KEY}`;
 
-    getData(calendar + requestData, (response) => {
-        renderCheap(response, formData.when);
-    });
+        getData(calendar + requestData, (response) => {
+            renderCheap(response, formData.when);
+        });
+    } else{
+        alert(`Некорректные данные: ${inputCitiesFrom.value} или ${inputCitiesTo.value}`);
+    }
 });
 
 //ВЫЗОВЫ!
 //Вызов API
 getData(citiesApi, (data) => {
     city = JSON.parse(data);
+    city.sort((a, b) => {
+        if(a.name > b.name){
+            return 1;
+        }
+        if(a.name < b.name){
+            return -1;
+        }
+        return 0;
+    });
 });
