@@ -1,3 +1,4 @@
+//ДАННЫЕ!
 //Переменные
 const formSearch = document.querySelector('.form-search'),
       inputCitiesFrom = formSearch.querySelector('.input__cities-from'),
@@ -5,6 +6,7 @@ const formSearch = document.querySelector('.form-search'),
       clearFrom = formSearch.querySelector('.from__clear'),
       inputCitiesTo = formSearch.querySelector('.input__cities-to'),
       dropdownCitiesTo = formSearch.querySelector('.dropdown__cities-to'),
+      inputDate = formSearch.querySelector('.input__date-depart'),
       clearTo = formSearch.querySelector('.to__clear');
 
 //Массив городов
@@ -19,6 +21,7 @@ const API_KEY = '49fb4ef6d6779275d180cc344c5e3954';
 //Url api Календарь цен
 const calendar = 'http://min-prices.aviasales.ru/calendar_preload';
 
+//ФУНКЦИИ!
 //API: функция обращения
 const getData = (url, callback) => {
     const request = new XMLHttpRequest();
@@ -31,7 +34,6 @@ const getData = (url, callback) => {
             callback(request.response);
         } else {
             console.error(request.status);
-            
         }
     });
     request.send();
@@ -62,6 +64,25 @@ const showCity = (input, list, clear) => {
     }
 }
 
+const renderCheapDay = (ticket) => {
+    console.log(ticket); 
+};
+
+const renderCheapYear = (tickets) => {
+    console.log(tickets); 
+};
+
+//Рендер билетов
+const renderCheap = (response, date) => {
+    const cheapTicket = JSON.parse(response).best_prices;
+    const cheapTicketDay = cheapTicket.filter((item) => item.depart_date === date);
+    
+    renderCheapDay(cheapTicketDay);
+    renderCheapYear(cheapTicket);
+
+}
+
+//СОБЫТИЯ!
 //Вызов функции для from интпута
 inputCitiesFrom.addEventListener('input', () => {
     showCity(inputCitiesFrom, dropdownCitiesFrom, clearFrom);
@@ -100,6 +121,23 @@ clearTo.addEventListener('click', () => {
     clearTo.style.opacity = '0';
 });
 
+//Обработка отправки формы
+formSearch.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const formData = {
+        from: city.find((item) => inputCitiesFrom.value === item.name).code,
+        to: city.find((item) => inputCitiesTo.value === item.name).code,
+        when: inputDate.value,
+    };
+
+    const requestData = `?depart_date=${formData.when}&origin=${formData.from}&destination=${formData.to}&one_way=true&token=${API_KEY}`;
+
+    getData(calendar + requestData, (response) => {
+        renderCheap(response, formData.when);
+    });
+});
+
+//ВЫЗОВЫ!
 //Вызов API
 getData(citiesApi, (data) => {
     city = JSON.parse(data);
